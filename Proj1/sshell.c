@@ -112,8 +112,10 @@ int main(int argc, char *argv[], char *envp[]){
 
     int in[2], out[2];	//Pipe Arrays
     int argNum = 0;	//Current Arg
-    int n;
-    int currArgs[255];
+    int n = 0;
+    int m = 0;
+    char *currArgs[ARR_SIZE];
+    char *currArgsChild[ARR_SIZE];
 
     /* Creating 'in' and 'out' pipes */
     if(pipe(in) < 0 || pipe(out) < 0) 
@@ -128,21 +130,47 @@ int main(int argc, char *argv[], char *envp[]){
  
         if (nargs==0) continue; /* Nothing entered so prompt again */
 
-	while(argNum != nargs) {
+//	while(argNum != nargs) {
         	if (!strcmp(args[argNum], "exit" )) exit(0);         
 		pid = fork();
 
         	if (pid){  /* The parent */
-		#ifdef DEBUG
-            	printf("Waiting for child (%d)\n", pid);
-		#endif
 
-            	pid = wait(ret_status);
+		/* Close Child Pipe Ends */
+		close(in[0]);
+		close(out[1]);
+
+		while(argNum != nargs) {
+			if(args[argNum] == "|") {
+				write(in[1], currArgs, ARR_SIZE);
+
+				#ifdef DEBUG
+            			printf("Waiting for child (%d)\n", pid);
+				#endif
+
+            			pid = wait(ret_status);
 		
-		#ifdef DEBUG
-            	printf("Child (%d) finished\n", pid);
-		#endif
+				#ifdef DEBUG
+            			printf("Child (%d) finished\n", pid);
+				#endif
+
+				n = 0;
+			}
+
+			else {
+				currArgs[n] = args[argNum];
+				n++;
+			}
+
+//			write(in[1], currArgs, ARR_SIZE);
+//			pid = wait(ret_status);
+			argNum++;
         	}
+
+		write(in[1], currArgs, ARR_SIZE);
+		pid = wait(ret_status);
+		
+		}
  
         	else{  /* The child executing the command */
 			/* Close stdin, stdout, stderr */
@@ -155,13 +183,13 @@ int main(int argc, char *argv[], char *envp[]){
 			dup2(out[1], 1);
 			dup2(out[1], 2);
 
-			/* Close Parent Pipe-Ends */
+			/* Close Parent Pipe Ends */
 			close(in[1]);
 			close(out[0]);
 
 			/* Read current arguments */
-			n = read(in[0], currArgs, 250);
-			currArgs[n] = 0;
+//			m = read(in[0], currArgsChild, ARR_SIZE);
+//			currArgs[m] = 0;
 
             		if( execvp(currArgs[0], currArgs)) {
                 		puts(strerror(errno));
@@ -170,8 +198,8 @@ int main(int argc, char *argv[], char *envp[]){
 
         	}
 
-		argNum++;
-	}
+//		argNum++;
+//	}
 
 	argNum = 0;
     }    
