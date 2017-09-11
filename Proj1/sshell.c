@@ -109,6 +109,16 @@ int main(int argc, char *argv[], char *envp[]){
     int *ret_status;
     size_t nargs;
     pid_t pid;
+
+    int in[2], out[2];	//Pipe Arrays
+    int argNum = 0;	//Current Arg
+    int n;
+    int currArgs[255];
+
+    /* Creating 'in' and 'out' pipes */
+    if(pipe(in) < 0 || pipe(out) < 0) 
+	puts(strerror(errno));
+
     
     while(1){
         printf("ee468>> "); /* Prompt */
@@ -117,27 +127,53 @@ int main(int argc, char *argv[], char *envp[]){
         parse_args(buffer, args, ARR_SIZE, &nargs); 
  
         if (nargs==0) continue; /* Nothing entered so prompt again */
-        if (!strcmp(args[0], "exit" )) exit(0);       
 
-        pid = fork();
+	while(argNum != nargs) {
+        	if (!strcmp(args[argNum], "exit" )) exit(0);         
+		pid = fork();
 
-        if (pid){  /* The parent */
-#ifdef DEBUG
-            printf("Waiting for child (%d)\n", pid);
-#endif
-            pid = wait(ret_status);
-#ifdef DEBUG
-            printf("Child (%d) finished\n", pid);
-#endif
-        } 
+        	if (pid){  /* The parent */
+		#ifdef DEBUG
+            	printf("Waiting for child (%d)\n", pid);
+		#endif
 
-        else{  /* The child executing the command */
-            if( execvp(args[0], args)) {
-                puts(strerror(errno));
-                exit(127);
-        }
+            	pid = wait(ret_status);
+		
+		#ifdef DEBUG
+            	printf("Child (%d) finished\n", pid);
+		#endif
+        	}
+ 
+        	else{  /* The child executing the command */
+			/* Close stdin, stdout, stderr */
+			close(0);
+			close(1);
+			close(2);
+			
+			/* Make pipes noew stdin, stdout, and stderr */
+			dup2(in[0], 0);
+			dup2(out[1], 1);
+			dup2(out[1], 2);
 
-        }
+			/* Close Parent Pipe-Ends */
+			close(in[1]);
+			close(out[0]);
+
+			/* Read current arguments */
+			n = read(in[0], currArgs, 250);
+			currArgs[n] = 0;
+
+            		if( execvp(currArgs[0], currArgs)) {
+                		puts(strerror(errno));
+                		exit(127);
+        		}
+
+        	}
+
+		argNum++;
+	}
+
+	argNum = 0;
     }    
     return 0;
 }
