@@ -1,5 +1,7 @@
 /*
  * EE 468 Midterm Exam 1
+ * Edited By: Jared Shimabukuro
+ * UH ID: 2257-2949
  *
  * Do not change the child.
  *
@@ -21,6 +23,10 @@ pid_t childPID;
 int k;
 
 for (k=0; k<9; k++) {
+
+   if(k % 3 == 0) {
+      wait(NULL);
+   }
 
    childPID = fork();
 
