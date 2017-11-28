@@ -1,0 +1,1 @@
+cmd_/home/jms1010/EE468/DevDrive/nothing.ko := ld -r -m elf_x86_64 -T ./scripts/module-common.lds --build-id  -o /home/jms1010/EE468/DevDrive/nothing.ko /home/jms1010/EE468/DevDrive/nothing.o /home/jms1010/EE468/DevDrive/nothing.mod.o ;  true
